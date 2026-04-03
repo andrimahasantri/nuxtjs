@@ -1,0 +1,72 @@
+# ──────────────────────────────────────
+# Root-level ignores
+# ──────────────────────────────────────
+
+# Claude AI config
+CLAUDE.md
+
+# PDF requirement docs
+*.pdf
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.idea/
+.vscode/
+.fleet/
+*.sublime-workspace
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+
+# ──────────────────────────────────────
+# Node.js (Frontend & Backend API)
+# ──────────────────────────────────────
+node_modules/
+
+# ──────────────────────────────────────
+# Nuxt (Frontend)
+# ──────────────────────────────────────
+frontend/.output
+frontend/.data
+frontend/.nuxt
+frontend/.nitro
+frontend/.cache
+
+# ──────────────────────────────────────
+# NestJS (Backend API)
+# ──────────────────────────────────────
+backend-api/dist/
+backend-api/coverage/
+
+# ──────────────────────────────────────
+# Laravel (Backend Admin)
+# ──────────────────────────────────────
+backend-admin/vendor/
+backend-admin/storage/*.key
+backend-admin/storage/pail/
+backend-admin/storage/logs/
+backend-admin/storage/framework/cache/data/
+backend-admin/storage/framework/sessions/
+backend-admin/storage/framework/views/
+backend-admin/public/build/
+backend-admin/public/hot
+backend-admin/public/storage
+backend-admin/database/database.sqlite
+backend-admin/.phpunit.cache/
+backend-admin/auth.json
+
+# ──────────────────────────────────────
+# Docker
+# ──────────────────────────────────────
+pgdata/

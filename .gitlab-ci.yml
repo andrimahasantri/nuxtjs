@@ -1,0 +1,108 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  POSTGRES_DB: products_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: password
+  DATABASE_URL: "postgresql://postgres:password@postgres:5432/products_db"
+
+# ──────────────────────────────────────────────
+# BUILD STAGE
+# ──────────────────────────────────────────────
+
+build-frontend:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/.output
+    expire_in: 1 hour
+
+build-backend-api:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd backend-api
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - backend-api/dist
+    expire_in: 1 hour
+
+build-backend-admin:
+  stage: build
+  image: php:8.3-cli
+  before_script:
+    - apt-get update && apt-get install -y git unzip libpq-dev
+    - docker-php-ext-install pdo pdo_pgsql
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+  script:
+    - cd backend-admin
+    - composer install --no-interaction --prefer-dist --optimize-autoloader
+    - cp .env.example .env
+    - php artisan key:generate
+
+# ──────────────────────────────────────────────
+# TEST STAGE
+# ──────────────────────────────────────────────
+
+test-backend-api:
+  stage: test
+  image: node:20-alpine
+  services:
+    - postgres:15
+  script:
+    - cd backend-api
+    - npm ci
+    - npm run lint
+    - npm run test
+  needs:
+    - build-backend-api
+
+test-backend-admin:
+  stage: test
+  image: php:8.3-cli
+  services:
+    - postgres:15
+  before_script:
+    - apt-get update && apt-get install -y git unzip libpq-dev
+    - docker-php-ext-install pdo pdo_pgsql
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+  script:
+    - cd backend-admin
+    - composer install --no-interaction --prefer-dist
+    - cp .env.example .env
+    - php artisan key:generate
+    - php artisan test
+  needs:
+    - build-backend-admin
+
+# ──────────────────────────────────────────────
+# DEPLOY STAGE
+# ──────────────────────────────────────────────
+
+deploy-production:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  only:
+    - main
+  script:
+    - echo "Build Docker images for each service"
+    - docker compose build
+    - echo "Tag and push images to container registry"
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker compose push
+    - echo "Deploy to DigitalOcean via SSH"
+    - echo "ssh deploy@$PRODUCTION_SERVER 'cd /app && docker compose pull && docker compose up -d'"
+  environment:
+    name: production
